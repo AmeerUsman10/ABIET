@@ -1,21 +1,14 @@
 """ai.nlp.query_processor
 ================================
-This module provides a **very lightweight** skeleton for the query processing
-component of the ABIET project. The full implementation will eventually
-perform natural‑language parsing, intent detection, and translation to SQL.
+This module provides a lightweight NLP query processor for the ABIET project.
+It tokenizes queries and generates basic SQL for simple SELECT statements.
 
-For now we implement a minimal, testable API that can be expanded later:
+For now, it supports patterns like:
+- "select all customers" -> "SELECT * FROM customers"
+- "show me users" -> "SELECT * FROM users"
+- "get customer names" -> "SELECT names FROM customers" (basic)
 
-* ``QueryProcessor`` – a class that holds configuration and exposes a
-  ``process`` method.
-* ``process`` – accepts a raw query string and returns a dictionary with the
-  original query and a placeholder ``parsed`` field. The placeholder mimics the
-  structure the final system will return (e.g. intent, entities, generated SQL).
-
-The implementation deliberately avoids heavy NLP dependencies to keep the
-container lightweight. When the project moves forward, developers can replace
-the stub with a proper model (spaCy, transformers, etc.) without changing the
-public interface.
+Future versions will use advanced NLP models for complex queries.
 """
 
 from __future__ import annotations
@@ -30,12 +23,12 @@ from ai.learning.learning_engine import LearningEngine
 
 @dataclass
 class QueryProcessor:
-    """Simple query processor placeholder.
+    """Simple query processor with basic SQL generation.
 
     Attributes
     ----------
     language: str
-        Language of the incoming queries. Defaults to ``"en"``.
+        Language of the incoming queries. Defaults to "en".
     """
 
     language: str = "en"
@@ -76,13 +69,42 @@ If unable to generate SQL, set "sql" to null and provide a reason in "error".
         except Exception as e:
             return {"intent": "error", "sql": None, "entities": {}, "error": str(e)}
 
+    def _generate_sql(self, parsed: Dict[str, Any]) -> str:
+        """Generate basic SQL from parsed tokens.
+
+        Supports simple patterns:
+        - select [all|*] [table]
+        - show [me] [table]
+        - get [column] from [table]
+        """
+        tokens = parsed["tokens"]
+        if not tokens:
+            return "-- Unable to parse query"
+
+        # Pattern 1: select all [table]
+        if tokens[0] == "select" and "all" in tokens:
+            table_idx = tokens.index("all") + 1
+            if table_idx < len(tokens):
+                table = tokens[table_idx]
+                return f"SELECT * FROM {table};"
+
+        # Pattern 2: show [me] [table]
+        if tokens[0] == "show":
+            table = tokens[-1] if len(tokens) > 1 else "unknown"
+            return f"SELECT * FROM {table};"
+
+        # Pattern 3: get [column] from [table]
+        if tokens[0] == "get" and "from" in tokens:
+            from_idx = tokens.index("from")
+            column = " ".join(tokens[1:from_idx])
+            table = tokens[from_idx + 1] if from_idx + 1 < len(tokens) else "unknown"
+            return f"SELECT {column} FROM {table};"
+
+        # Fallback
+        return "-- Query not recognized. Supported: 'select all customers', 'show users', 'get names from customers'"
+
     def process(self, query: str) -> Dict[str, Any]:
         """Process a raw query string.
-
-        Parameters
-        ----------
-        query: str
-            The user‑provided natural language query.
 
         Returns
         -------
@@ -107,7 +129,8 @@ If unable to generate SQL, set "sql" to null and provide a reason in "error".
         return {
             "original": query,
             "parsed": parsed,
+            "generated_sql": parsed.get("sql"),
         }
 
-# Export a singleton for convenient import in the FastAPI route.
+# Singleton processor
 processor = QueryProcessor()

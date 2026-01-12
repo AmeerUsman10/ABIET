@@ -1,9 +1,7 @@
 """backend.routes.query
 --------------------------------
-FastAPI route that exposes the query processing endpoint.
-It now uses the ``ai.nlp.query_processor`` module introduced in the previous
-patch. The endpoint accepts a JSON payload with a ``query`` field and returns the
-structured result from the processor.
+FastAPI route for natural language query processing.
+Now returns parsed tokens and generated SQL.
 """
 
 import logging
@@ -16,10 +14,7 @@ from ai.nlp.query_processor import processor
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-
 class QueryRequest(BaseModel):
-    """Request model for the query endpoint."""
-
     query: str
 
 
@@ -32,11 +27,6 @@ class QueryResponse(BaseModel):
 
 @router.post("/process", response_model=QueryResponse)
 async def query_endpoint(request: QueryRequest):
-    """Process a natural‑language query and return a parsed representation.
-
-    The current implementation is a stub that tokenises the input. Future
-    versions will replace ``processor.process`` with full NLP and SQL generation.
-    """
     try:
         logger.info(f"Processing query: {request.query[:50]}...")
         result = processor.process(request.query)
