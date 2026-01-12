@@ -1,0 +1,19 @@
+{
+  "patterns": [
+    {
+      "natural_query": "SELECT * FROM users",
+      "generated_sql": "SELECT * FROM users WHERE active = True",
+      "success": true,
+      "timestamp": "2026-01-12T20:13:57.449952",
+      "usage_count": 1
+    }
+  ],
+  "corrections": [
+    {
+      "original": "SELECT * FROM users",
+      "corrected": "SELECT * FROM users WHERE active = True",
+      "timestamp": "2026-01-12T20:13:57.452033"
+    }
+  ],
+  "usage_stats": {}
+}

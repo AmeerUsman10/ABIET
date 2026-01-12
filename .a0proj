@@ -1,0 +1,30 @@
+{
+    "name": "ABIET - Database AI Assistant",
+    "description": "Artificial Business Intelligence Enabled Tool - Next generation database AI assistant",
+    "version": "0.1.0",
+    "author": "Agent Zero Development",
+    "created": "2026-01-12",
+    "type": "ai_database_assistant",
+    "language": "python",
+    "framework": "fastapi",
+    "dependencies": [
+        "fastapi",
+        "sqlalchemy",
+        "pydantic",
+        "langchain",
+        "transformers",
+        "redis",
+        "celery"
+    ],
+    "structure": {
+        "backend": "Core services and API",
+        "frontend": "Web interface",
+        "ai": "AI/ML components",
+        "infrastructure": "Deployment and ops",
+        "docs": "Documentation",
+        "tests": "Testing suite"
+    },
+    "entry_point": "backend/main.py",
+    "requirements": "requirements.txt",
+    "environment": "production"
+}
