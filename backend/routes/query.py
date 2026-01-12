@@ -6,11 +6,14 @@ patch. The endpoint accepts a JSON payload with a ``query`` field and returns th
 structured result from the processor.
 """
 
+import logging
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+from typing import Dict
 
 from ai.nlp.query_processor import processor
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -20,7 +23,14 @@ class QueryRequest(BaseModel):
     query: str
 
 
-@router.post("/api/v1/query/")
+class QueryResponse(BaseModel):
+    """Response model for the query endpoint."""
+
+    status: str
+    data: Dict
+
+
+@router.post("/process", response_model=QueryResponse)
 async def query_endpoint(request: QueryRequest):
     """Process a natural‑language query and return a parsed representation.
 
@@ -28,7 +38,10 @@ async def query_endpoint(request: QueryRequest):
     versions will replace ``processor.process`` with full NLP and SQL generation.
     """
     try:
+        logger.info(f"Processing query: {request.query[:50]}...")
         result = processor.process(request.query)
-        return {"status": "success", "data": result}
+        logger.info("Query processed successfully")
+        return QueryResponse(status="success", data=result)
     except Exception as exc:  # pragma: no cover – defensive programming
-        raise HTTPException(status_code=500, detail=str(exc))
+        logger.error(f"Error processing query: {str(exc)}")
+        raise HTTPException(status_code=500, detail="Failed to process the query. Please check your input and try again.")

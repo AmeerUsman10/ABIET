@@ -15,5 +15,71 @@
       "timestamp": "2026-01-12T20:13:57.452033"
     }
   ],
-  "usage_stats": {}
+  "usage_stats": {},
+  "interactions": [
+    {
+      "natural_query": "test query",
+      "generated_sql": "SELECT * FROM test",
+      "success": true,
+      "feedback": "good",
+      "error": null,
+      "timestamp": "2026-01-12T21:51:21.093630"
+    },
+    {
+      "natural_query": "select all customers",
+      "generated_sql": null,
+      "success": false,
+      "feedback": null,
+      "error": "Error code: 401 - {'error': {'message': \"You didn't provide an API key. You need to provide your API key in an Authorization header using Bearer auth (i.e. Authorization: Bearer YOUR_KEY), or as the password field (with blank username) if you're accessing the API from your browser and are prompted for a username and password. You can obtain an API key from https://platform.openai.com/account/api-keys.\", 'type': 'invalid_request_error', 'param': None, 'code': None}}",
+      "timestamp": "2026-01-12T21:56:50.759120"
+    },
+    {
+      "natural_query": "select all customers",
+      "generated_sql": null,
+      "success": false,
+      "feedback": null,
+      "error": "Error code: 401 - {'error': {'message': \"You didn't provide an API key. You need to provide your API key in an Authorization header using Bearer auth (i.e. Authorization: Bearer YOUR_KEY), or as the password field (with blank username) if you're accessing the API from your browser and are prompted for a username and password. You can obtain an API key from https://platform.openai.com/account/api-keys.\", 'type': 'invalid_request_error', 'param': None, 'code': None}}",
+      "timestamp": "2026-01-12T21:56:54.044647"
+    },
+    {
+      "natural_query": "select all customers",
+      "generated_sql": "SELECT * FROM users",
+      "success": true,
+      "feedback": null,
+      "error": null,
+      "timestamp": "2026-01-12T22:31:59.819306"
+    },
+    {
+      "natural_query": "select all customers",
+      "generated_sql": null,
+      "success": false,
+      "feedback": null,
+      "error": "API Error",
+      "timestamp": "2026-01-12T22:31:59.823024"
+    },
+    {
+      "natural_query": "select all customers",
+      "generated_sql": null,
+      "success": false,
+      "feedback": null,
+      "error": "Invalid JSON response: Expecting value: line 1 column 1 (char 0)",
+      "timestamp": "2026-01-12T22:31:59.826423"
+    },
+    {
+      "natural_query": "select all customers",
+      "generated_sql": "SELECT * FROM users",
+      "success": true,
+      "feedback": null,
+      "error": null,
+      "timestamp": "2026-01-12T22:31:59.835780"
+    },
+    {
+      "natural_query": "SELECT 1 as test",
+      "generated_sql": null,
+      "success": false,
+      "feedback": null,
+      "error": "Error code: 401 - {'error': {'message': 'Incorrect API key provided: your_act***************here. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}",
+      "timestamp": "2026-01-12T23:11:37.872001"
+    }
+  ]
 }

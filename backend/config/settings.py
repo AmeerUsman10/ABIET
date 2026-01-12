@@ -1,11 +1,12 @@
 import os
 """
 ABIET Configuration Settings
-Updated for Pydantic v2 compatibility
 """
 
-from pydantic_settings import BaseSettings
+from pydantic import BaseSettings
 from typing import List
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 class Settings(BaseSettings):
     # Application Settings
@@ -21,12 +22,15 @@ class Settings(BaseSettings):
     CORS_ORIGINS: List[str] = ["*"]
     
     # Database Settings
-    DATABASE_URL: str = "sqlite:///./abiet.db"
+    DATABASE_URL: str = "sqlite:///./abiet.db"  # SQLite for internal database
+    MSSQL_DATABASE_URL: str = os.getenv("MSSQL_DATABASE_URL", "mssql+pyodbc://sa:YourStrong!Passw0rd@mssql/master?driver=ODBC+Driver+17+for+SQL+Server")
+    ORACLE_DATABASE_URL: str = os.getenv("ORACLE_DATABASE_URL", "")
     
     # AI Settings
     AI_MODEL: str = "gpt-3.5-turbo"
     AI_TEMPERATURE: float = 0.7
     AI_MAX_TOKENS: int = 2000
+    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     
     # Security Settings
     SECRET_KEY: str = "your-secret-key-here"
@@ -38,13 +42,7 @@ class Settings(BaseSettings):
         env_file_encoding = "utf-8"
 
 settings = Settings()
-# Database connection URLs for supported engines
-# Example formats (set via .env or environment variables):
-#   MSSQL:  mssql+pyodbc://user:pass@host:1433/database?driver=ODBC+Driver+17+for+SQL+Server
-#   Oracle: oracle+cx_oracle://user:pass@host:1521/?service_name=YOUR_SERVICE
-MSSQL_DATABASE_URL: str = os.getenv("MSSQL_DATABASE_URL", "")
-ORACLE_DATABASE_URL: str = os.getenv("ORACLE_DATABASE_URL", "")
-# JWT Authentication settings
-SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-here")
-ALGORITHM: str = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
+
+# Database session setup
+engine = create_engine(settings.DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

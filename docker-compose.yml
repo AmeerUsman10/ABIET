@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/abiet
+      - REDIS_URL=redis://redis:6379/0
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - MSSQL_DATABASE_URL=mssql+pyodbc://sa:YourStrong!Passw0rd@mssql/master?driver=ODBC+Driver+17+for+SQL+Server
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./backend:/app/backend
+    networks:
+      - abiet-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "8080:8080"
+    networks:
+      - abiet-network
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: abiet
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - abiet-network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - abiet-network
+
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: Y
+      SA_PASSWORD: YourStrong!Passw0rd
+      MSSQL_PID: Express
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql_data:/var/opt/mssql
+    networks:
+      - abiet-network
+
+volumes:
+  postgres_data:
+  mssql_data:
+
+networks:
+  abiet-network:
+    driver: bridge

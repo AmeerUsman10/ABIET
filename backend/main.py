@@ -3,10 +3,20 @@ ABIET - Database AI Assistant
 Main FastAPI Application
 """
 
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.routes import api_router
-from backend.config.settings import settings
+from backend.config.settings import settings, engine
+from backend.models import Base
+from sqlalchemy.orm import Session
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="ABIET - Database AI Assistant",
@@ -27,6 +37,9 @@ app.add_middleware(
 
 # Include API routes
 app.include_router(api_router, prefix="/api/v1")
+
+# Create database tables
+Base.metadata.create_all(bind=engine)
 
 @app.get("/")
 async def root():

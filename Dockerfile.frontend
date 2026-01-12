@@ -1,0 +1,14 @@
+# Use Python 3.11 slim image
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Copy frontend files
+COPY frontend/ .
+
+# Expose port
+EXPOSE 8080
+
+# Run the server
+CMD ["python", "serve.py"]
