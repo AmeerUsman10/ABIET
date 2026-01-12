@@ -1,44 +1,74 @@
-"""
-ABIET Query Processor
-Natural Language to SQL conversion
+"""ai.nlp.query_processor
+================================
+This module provides a **very lightweight** skeleton for the query processing
+component of the ABIET project. The full implementation will eventually
+perform natural‑language parsing, intent detection, and translation to SQL.
+
+For now we implement a minimal, testable API that can be expanded later:
+
+* ``QueryProcessor`` – a class that holds configuration and exposes a
+  ``process`` method.
+* ``process`` – accepts a raw query string and returns a dictionary with the
+  original query and a placeholder ``parsed`` field. The placeholder mimics the
+  structure the final system will return (e.g. intent, entities, generated SQL).
+
+The implementation deliberately avoids heavy NLP dependencies to keep the
+container lightweight. When the project moves forward, developers can replace
+the stub with a proper model (spaCy, transformers, etc.) without changing the
+public interface.
 """
 
+from __future__ import annotations
+
+from dataclasses import dataclass
 from typing import Dict, Any
-from transformers import pipeline
 
+
+@dataclass
 class QueryProcessor:
-    def __init__(self, model_name: str = "google/flan-t5-large"):
-        self.model_name = model_name
-        self.nlp_pipeline = pipeline("text2text-generation", model=model_name)
-        
-    def process_query(self, natural_language_query: str, database_schema: Dict[str, Any]) -> str:
+    """Simple query processor placeholder.
+
+    Attributes
+    ----------
+    language: str
+        Language of the incoming queries. Defaults to ``"en"``.
+    """
+
+    language: str = "en"
+
+    def _basic_parse(self, query: str) -> Dict[str, Any]:
+        """Very naive parsing – split on whitespace and return tokens.
+
+        This method exists solely to demonstrate a deterministic output that
+        can be unit‑tested. Real logic will replace this implementation.
         """
-        Convert natural language query to SQL
-        """
-        # This is a placeholder - actual implementation will be more sophisticated
-        prompt = f"Convert this natural language query to SQL:\n\nQuery: {natural_language_query}\n\nDatabase Schema: {database_schema}" 
-        
-        result = self.nlp_pipeline(prompt, max_length=512)
-        return result[0]['generated_text']
-    
-    def analyze_query_intent(self, query: str) -> Dict[str, Any]:
-        """
-        Analyze the intent behind a query
-        """
-        # Intent analysis logic
+        tokens = query.strip().split()
         return {
-            "intent": "information_retrieval",
-            "confidence": 0.85,
-            "entities": self._extract_entities(query)
+            "tokens": tokens,
+            "token_count": len(tokens),
         }
-    
-    def _extract_entities(self, query: str) -> Dict[str, str]:
+
+    def process(self, query: str) -> Dict[str, Any]:
+        """Process a raw query string.
+
+        Parameters
+        ----------
+        query: str
+            The user‑provided natural language query.
+
+        Returns
+        -------
+        dict
+            A dictionary containing the original query and a ``parsed`` field
+            with the result of the placeholder parser.
         """
-        Extract entities from query
-        """
-        # Entity extraction logic
+        if not isinstance(query, str):
+            raise TypeError("query must be a string")
+        parsed = self._basic_parse(query)
         return {
-            "tables": [],
-            "columns": [],
-            "values": []
+            "original": query,
+            "parsed": parsed,
         }
+
+# Export a singleton for convenient import in the FastAPI route.
+processor = QueryProcessor()

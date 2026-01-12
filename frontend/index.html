@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ABIET – Database AI Assistant</title>
+    <style>
+        body {font-family: Arial, sans-serif; margin:0; padding:0; background:#f5f5f5;}
+        header {background:#2c3e50; color:#fff; padding:1rem; display:flex; justify-content:space-between; align-items:center;}
+        nav a {color:#fff; margin:0 0.5rem; text-decoration:none;}
+        main {padding:2rem; max-width:800px; margin:auto;}
+        .card {background:#fff; padding:1.5rem; margin-bottom:1.5rem; border-radius:6px; box-shadow:0 2px 4px rgba(0,0,0,0.1);}
+        label {display:block; margin-top:0.5rem;}
+        input, select, textarea, button {width:100%; padding:0.5rem; margin-top:0.3rem;}
+        button {background:#27ae60; color:#fff; border:none; cursor:pointer;}
+        button:hover {background:#219150;}
+        .logout {background:#e74c3c;}
+        .logout:hover {background:#c0392b;}
+        pre {background:#eee; padding:1rem; overflow:auto;}
+        .hidden {display:none;}
+    </style>
+</head>
+<body>
+    <header>
+        <h1>ABIET</h1>
+        <nav>
+            <a href="#home">Home</a>
+            <a href="#query" id="queryLink" class="hidden">Query</a>
+            <a href="#learning" id="learningLink" class="hidden">Learning</a>
+            <a href="#docs" target="_blank" rel="noopener">Docs</a>
+            <button id="logoutBtn" class="hidden logout">Logout</button>
+        </nav>
+    </header>
+    <main>
+        <section id="login" class="card">
+            <h2>Login</h2>
+            <form id="loginForm">
+                <label for="username">Username</label>
+                <input type="text" id="username" required />
+                <label for="password">Password</label>
+                <input type="password" id="password" required />
+                <button type="submit">Login</button>
+            </form>
+            <p id="loginMsg"></p>
+        </section>
+        <section id="home" class="card hidden">
+            <h2>Welcome to ABIET</h2>
+            <p>You are logged in. Use the <strong>Query</strong> tab to run SQL against databases.</p>
+        </section>
+        <section id="query" class="card hidden">
+            <h2>Database Query</h2>
+            <form id="queryForm">
+                <label for="dbType">Database type</label>
+                <select id="dbType" required>
+                    <option value="mssql">MSSQL</option>
+                    <option value="oracle">Oracle</option>
+                </select>
+                <label for="sqlQuery">SQL Query</label>
+                <textarea id="sqlQuery" rows="5" placeholder="SELECT 1 AS test;" required></textarea>
+                <button type="submit">Run Query</button>
+            </form>
+            <h3>Result</h3>
+            <pre id="resultBox">(no result yet)</pre>
+        </section>
+        <section id="learning" class="card hidden">
+            <h2>Learning Center</h2>
+            <p>Coming soon – view and manage learned query patterns.</p>
+        </section>
+    </main>
+    <script src="script.js"></script>
+</body>
+</html>
