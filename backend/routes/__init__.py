@@ -3,7 +3,7 @@ ABIET API Routes
 """
 
 from fastapi import APIRouter
-from backend.routes import health, query, learning
+from . import health, query, learning
 
 api_router = APIRouter()
 api_router.include_router(health.router, tags=["health"])

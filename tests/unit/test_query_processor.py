@@ -83,6 +83,9 @@ def test_process_records_interaction(mock_learning_engine_class, mock_openai_cla
     mock_learning_engine = MagicMock()
     mock_learning_engine_class.return_value = mock_learning_engine
     
+    # Replace the learning engine instance
+    query_processor.learning_engine = mock_learning_engine
+    
     query = "select all customers"
     result = query_processor.process(query)
     

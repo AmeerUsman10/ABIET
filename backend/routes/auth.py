@@ -88,7 +88,14 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer(auto_error=False)), db: Session = Depends(get_db)):
+    if not credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
     # For testing purposes, allow dummy token
     if credentials.credentials == "dummy":
         from backend.models import User
@@ -185,7 +192,11 @@ async def register_user(request: RegisterRequest, db: Session = Depends(get_db))
 async def read_users_me(current_user: User = Depends(get_current_user)):
     try:
         logger.info(f"Fetching user info for: {current_user.username}")
-        return current_user
+        return {
+            "id": current_user.id,
+            "username": current_user.username,
+            "email": current_user.email
+        }
     except Exception as e:
         logger.error(f"Error fetching user info for {current_user.username}: {str(e)}")
         raise HTTPException(status_code=500, detail="An unexpected error occurred while fetching user information.")

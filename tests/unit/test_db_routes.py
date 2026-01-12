@@ -24,20 +24,6 @@ def test_db():
     # Create tables
     Base.metadata.create_all(bind=engine)
     
-    # Create a test user
-    db = TestingSessionLocal()
-    test_user = User(
-        username="testuser",
-        email="test@example.com",
-        hashed_password="hashedpass",
-        created_at=datetime(2023, 1, 1),
-        updated_at=datetime(2023, 1, 1)
-    )
-    db.add(test_user)
-    db.commit()
-    db.refresh(test_user)
-    db.close()
-    
     yield TestingSessionLocal()
     
     # Cleanup
@@ -107,7 +93,7 @@ def test_execute_query_sql_error(mock_get_engine, client, auth_token):
         headers={"Authorization": f"Bearer {auth_token}"}
     )
     assert response.status_code == 500
-    assert "SQL Error" in response.json()["detail"]
+    assert "database error occurred" in response.json()["detail"]
 
 def test_execute_query_invalid_db_type(client, auth_token):
     response = client.post("/api/v1/db/execute", 

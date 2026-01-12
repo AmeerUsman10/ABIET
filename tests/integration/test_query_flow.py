@@ -28,7 +28,7 @@ def test_end_to_end_query_flow(mock_openai_class, client):
     mock_client.chat.completions.create.return_value = mock_response
     
     # Send query request
-    response = client.post("/api/v1/query/", json={"query": "show me all active customers"})
+    response = client.post("/api/v1/query/process", json={"query": "show me all active customers"})
     
     assert response.status_code == 200
     data = response.json()
@@ -48,7 +48,7 @@ def test_end_to_end_query_flow_with_error(mock_openai_class, client):
     mock_openai_class.return_value = mock_client
     mock_client.chat.completions.create.side_effect = Exception("API unavailable")
     
-    response = client.post("/api/v1/query/", json={"query": "invalid query"})
+    response = client.post("/api/v1/query/process", json={"query": "invalid query"})
     
     assert response.status_code == 200  # The endpoint catches exceptions
     data = response.json()
@@ -62,7 +62,7 @@ def test_end_to_end_query_flow_with_error(mock_openai_class, client):
 
 def test_query_endpoint_invalid_input(client):
     """Test query endpoint with invalid input."""
-    response = client.post("/api/v1/query/", json={"invalid": "data"})
+    response = client.post("/api/v1/query/process", json={"invalid": "data"})
     
     # Pydantic should validate and reject
     assert response.status_code == 422  # Validation error

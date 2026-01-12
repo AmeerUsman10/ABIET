@@ -80,6 +80,158 @@
       "feedback": null,
       "error": "Error code: 401 - {'error': {'message': 'Incorrect API key provided: your_act***************here. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}",
       "timestamp": "2026-01-12T23:11:37.872001"
+    },
+    {
+      "natural_query": "select all customers",
+      "generated_sql": "SELECT * FROM users",
+      "success": true,
+      "feedback": null,
+      "error": null,
+      "timestamp": "2026-01-12T23:35:19.376847"
+    },
+    {
+      "natural_query": "select all customers",
+      "generated_sql": null,
+      "success": false,
+      "feedback": null,
+      "error": "API Error",
+      "timestamp": "2026-01-12T23:35:19.380225"
+    },
+    {
+      "natural_query": "select all customers",
+      "generated_sql": null,
+      "success": false,
+      "feedback": null,
+      "error": "Invalid JSON response: Expecting value: line 1 column 1 (char 0)",
+      "timestamp": "2026-01-12T23:35:19.383256"
+    },
+    {
+      "natural_query": "select all customers",
+      "generated_sql": "SELECT * FROM users",
+      "success": true,
+      "feedback": null,
+      "error": null,
+      "timestamp": "2026-01-12T23:35:19.388783"
+    },
+    {
+      "natural_query": "show me all active customers",
+      "generated_sql": "SELECT * FROM customers WHERE active = 1",
+      "success": true,
+      "feedback": null,
+      "error": null,
+      "timestamp": "2026-01-12T23:36:49.103601"
+    },
+    {
+      "natural_query": "invalid query",
+      "generated_sql": null,
+      "success": false,
+      "feedback": null,
+      "error": "API unavailable",
+      "timestamp": "2026-01-12T23:36:49.109357"
+    },
+    {
+      "natural_query": "show me all active customers",
+      "generated_sql": "SELECT * FROM customers WHERE active = 1",
+      "success": true,
+      "feedback": null,
+      "error": null,
+      "timestamp": "2026-01-12T23:38:45.581787"
+    },
+    {
+      "natural_query": "invalid query",
+      "generated_sql": null,
+      "success": false,
+      "feedback": null,
+      "error": "API unavailable",
+      "timestamp": "2026-01-12T23:38:45.587471"
+    },
+    {
+      "natural_query": "select all customers",
+      "generated_sql": "SELECT * FROM users",
+      "success": true,
+      "feedback": null,
+      "error": null,
+      "timestamp": "2026-01-12T23:38:49.747118"
+    },
+    {
+      "natural_query": "select all customers",
+      "generated_sql": null,
+      "success": false,
+      "feedback": null,
+      "error": "API Error",
+      "timestamp": "2026-01-12T23:38:49.749561"
+    },
+    {
+      "natural_query": "select all customers",
+      "generated_sql": null,
+      "success": false,
+      "feedback": null,
+      "error": "Invalid JSON response: Expecting value: line 1 column 1 (char 0)",
+      "timestamp": "2026-01-12T23:38:49.753094"
+    },
+    {
+      "natural_query": "select all customers",
+      "generated_sql": "SELECT * FROM users",
+      "success": true,
+      "feedback": null,
+      "error": null,
+      "timestamp": "2026-01-12T23:38:49.758743"
+    },
+    {
+      "natural_query": "show me all active customers",
+      "generated_sql": "SELECT * FROM customers WHERE active = 1",
+      "success": true,
+      "feedback": null,
+      "error": null,
+      "timestamp": "2026-01-12T23:39:27.805299"
+    },
+    {
+      "natural_query": "invalid query",
+      "generated_sql": null,
+      "success": false,
+      "feedback": null,
+      "error": "API unavailable",
+      "timestamp": "2026-01-12T23:39:27.811917"
+    },
+    {
+      "natural_query": "show me all active customers",
+      "generated_sql": "SELECT * FROM customers WHERE active = 1",
+      "success": true,
+      "feedback": null,
+      "error": null,
+      "timestamp": "2026-01-12T23:39:32.424783"
+    },
+    {
+      "natural_query": "invalid query",
+      "generated_sql": null,
+      "success": false,
+      "feedback": null,
+      "error": "API unavailable",
+      "timestamp": "2026-01-12T23:39:32.431427"
+    },
+    {
+      "natural_query": "select all customers",
+      "generated_sql": "SELECT * FROM users",
+      "success": true,
+      "feedback": null,
+      "error": null,
+      "timestamp": "2026-01-12T23:39:37.122555"
+    },
+    {
+      "natural_query": "select all customers",
+      "generated_sql": null,
+      "success": false,
+      "feedback": null,
+      "error": "API Error",
+      "timestamp": "2026-01-12T23:39:37.124920"
+    },
+    {
+      "natural_query": "select all customers",
+      "generated_sql": null,
+      "success": false,
+      "feedback": null,
+      "error": "Invalid JSON response: Expecting value: line 1 column 1 (char 0)",
+      "timestamp": "2026-01-12T23:39:37.130527"
     }
   ]
 }
