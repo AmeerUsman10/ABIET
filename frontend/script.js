@@ -23,15 +23,10 @@ function showLoggedOut() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Clear any existing token for testing
-    localStorage.removeItem('token');
-    token = null;
-    
-    if (token) {
-        showLoggedIn();
-    } else {
-        showLoggedOut();
-    }
+    // Auto-login for testing - set dummy token
+    token = 'dummy';
+    localStorage.setItem('token', 'dummy');
+    showLoggedIn();
 });
 
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
