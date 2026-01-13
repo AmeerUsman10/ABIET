@@ -16,6 +16,8 @@
         button:hover {background:#219150;}
         .logout {background:#e74c3c;}
         .logout:hover {background:#c0392b;}
+        .button {display:inline-block; padding:0.5rem 1rem; background:#3498db; color:#fff; text-decoration:none; border-radius:4px;}
+        .button:hover {background:#2980b9;}
         pre {background:#eee; padding:1rem; overflow:auto;}
         table {width:100%; border-collapse:collapse; margin-top:1rem;}
         th, td {border:1px solid #ddd; padding:0.5rem; text-align:left;}
@@ -90,6 +92,13 @@
         <section id="learning" class="card hidden">
             <h2>Learning Center</h2>
             <p>Coming soon – view and manage learned query patterns.</p>
+        </section>
+        <section id="docs" class="card hidden">
+            <h2>API Documentation</h2>
+            <p>Access the FastAPI documentation:</p>
+            <a href="http://localhost:8000/docs" target="_blank" class="button">Open API Docs</a>
+            <br><br>
+            <a href="http://localhost:8000/redoc" target="_blank" class="button">Open ReDoc</a>
         </section>
     </main>
     <script src="script.js"></script>

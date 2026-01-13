@@ -44,6 +44,39 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
     showLoggedOut();
 });
 
+// Navigation handling
+document.querySelectorAll('nav a').forEach(link => {
+    link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const target = e.target.getAttribute('href').substring(1); // Remove #
+        
+        // Hide all sections
+        document.querySelectorAll('main > section').forEach(section => {
+            section.classList.add('hidden');
+        });
+        
+        // Show target section
+        const targetSection = document.getElementById(target);
+        if (targetSection) {
+            targetSection.classList.remove('hidden');
+        }
+        
+        // Update URL hash
+        window.location.hash = target;
+    });
+});
+
+// Handle initial load with hash
+window.addEventListener('load', () => {
+    const hash = window.location.hash.substring(1);
+    if (hash && document.getElementById(hash)) {
+        document.querySelectorAll('main > section').forEach(section => {
+            section.classList.add('hidden');
+        });
+        document.getElementById(hash).classList.remove('hidden');
+    }
+});
+
 document.getElementById('queryForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!token) {
