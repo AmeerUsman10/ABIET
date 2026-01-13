@@ -23,19 +23,74 @@ function showLoggedOut() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Auto-login for testing - set dummy token
-    token = 'dummy';
-    localStorage.setItem('token', 'dummy');
-    showLoggedIn();
+    // Check for existing token
+    if (token) {
+        showLoggedIn();
+    } else {
+        showLoggedOut();
+    }
+});
+
+document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('regUsername').value;
+    const email = document.getElementById('regEmail').value;
+    const password = document.getElementById('regPassword').value;
+    
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/v1/auth/register`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username, email, password }),
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            document.getElementById('registerMsg').textContent = 'Registration successful! You can now log in.';
+            // Clear form
+            document.getElementById('regUsername').value = '';
+            document.getElementById('regEmail').value = '';
+            document.getElementById('regPassword').value = '';
+        } else {
+            document.getElementById('registerMsg').textContent = data.detail || 'Registration failed';
+        }
+    } catch (error) {
+        document.getElementById('registerMsg').textContent = 'Network error. Please try again.';
+        console.error('Registration error:', error);
+    }
 });
 
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    // Bypass login for testing - set dummy token
-    token = 'dummy';
-    localStorage.setItem('token', 'dummy');
-    showLoggedIn();
-    document.getElementById('loginMsg').textContent = 'Logged in (demo mode)';
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/v1/auth/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username, password }),
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            token = data.access_token;
+            localStorage.setItem('token', token);
+            showLoggedIn();
+            document.getElementById('loginMsg').textContent = 'Login successful!';
+        } else {
+            document.getElementById('loginMsg').textContent = data.detail || 'Login failed';
+        }
+    } catch (error) {
+        document.getElementById('loginMsg').textContent = 'Network error. Please try again.';
+        console.error('Login error:', error);
+    }
 });
 
 document.getElementById('logoutBtn').addEventListener('click', () => {
