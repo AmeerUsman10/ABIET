@@ -76,15 +76,15 @@
                     <option value="oracle">Oracle</option>
                 </select>
                 <label for="dbHost">Host</label>
-                <input type="text" id="dbHost" value="host.docker.internal" required />
+                <input type="text" id="dbHost" value="host.docker.internal" placeholder="host.docker.internal for local SQL Server" required />
                 <label for="dbPort">Port</label>
                 <input type="number" id="dbPort" value="1433" required />
                 <label for="dbName">Database Name</label>
-                <input type="text" id="dbName" required />
+                <input type="text" id="dbName" value="master" placeholder="master for default database" required />
                 <label for="dbUsername">Username</label>
-                <input type="text" id="dbUsername" required />
+                <input type="text" id="dbUsername" value="sa" placeholder="sa for SQL Server admin" required />
                 <label for="dbPassword">Password</label>
-                <input type="password" id="dbPassword" required />
+                <input type="password" id="dbPassword" placeholder="Your SQL Server password" required />
                 <button type="submit">Save Connection</button>
                 <button type="button" id="testConnectionBtn">Test Connection</button>
             </form>
@@ -93,11 +93,6 @@
         <section id="query" class="card hidden">
             <h2>Database Query</h2>
             <form id="queryForm">
-                <label for="dbType">Database type</label>
-                <select id="dbType" required>
-                    <option value="mssql">MSSQL</option>
-                    <option value="oracle">Oracle</option>
-                </select>
                 <label for="naturalQuery">Natural Language Query</label>
                 <textarea id="naturalQuery" rows="3" placeholder="Show me all users from New York" required></textarea>
                 <button type="submit">Submit Query</button>

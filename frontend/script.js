@@ -240,7 +240,6 @@ document.getElementById('queryForm').addEventListener('submit', async (e) => {
         alert('Please log in first.');
         return;
     }
-    const dbType = document.getElementById('dbType').value;
     const query = document.getElementById('naturalQuery').value.trim();
     if (!query) {
         alert('Please enter a query.');
@@ -264,7 +263,7 @@ document.getElementById('queryForm').addEventListener('submit', async (e) => {
             const parsed = data.data.parsed;
             document.getElementById('sqlBox').textContent = parsed.sql || 'No SQL generated';
             if (parsed.sql) {
-                await executeSQL(parsed.sql, dbType);
+                await executeSQL(parsed.sql);
             } else {
                 document.getElementById('noResults').textContent = parsed.error || 'Unable to generate SQL';
                 document.getElementById('noResults').classList.remove('hidden');
@@ -279,7 +278,7 @@ document.getElementById('queryForm').addEventListener('submit', async (e) => {
     }
 });
 
-async function executeSQL(sql, dbType) {
+async function executeSQL(sql) {
     // Get connection details from form
     const connectionData = {
         db_type: document.getElementById('dbType').value,
@@ -298,7 +297,7 @@ async function executeSQL(sql, dbType) {
                 'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({ 
-                db_type: dbType, 
+                db_type: connectionData.db_type, 
                 query: sql,
                 connection: connectionData
             })
