@@ -26,14 +26,6 @@
         #historyList {list-style:none; padding:0;}
         #historyList li {background:#fff; margin-bottom:0.5rem; padding:0.5rem; border-radius:4px; box-shadow:0 1px 2px rgba(0,0,0,0.1);}
         #correctionInput {width:100%; margin-top:0.5rem;}
-        .tabs {margin-bottom:1rem;}
-        .tab-btn {padding:0.5rem 1rem; border:none; background:#ddd; cursor:pointer; margin-right:0.5rem;}
-        .tab-btn.active {background:#3498db; color:#fff;}
-        .tab-content {display:none;}
-        .tab-content:not(.hidden) {display:block;}
-        #savedConnections {list-style:none; padding:0;}
-        #savedConnections li {background:#f9f9f9; margin-bottom:0.5rem; padding:0.5rem; border-radius:4px; display:flex; justify-content:space-between; align-items:center;}
-        .delete-btn {background:#e74c3c; color:#fff; border:none; padding:0.25rem 0.5rem; border-radius:3px; cursor:pointer;}
     </style>
 </head>
 <body>
@@ -41,7 +33,6 @@
         <h1>ABIET</h1>
         <nav>
             <a href="#home">Home</a>
-            <a href="#connections" id="connectionsLink" class="hidden">Connections</a>
             <a href="#query" id="queryLink" class="hidden">Query</a>
             <a href="#learning" id="learningLink" class="hidden">Learning</a>
             <a href="#docs" target="_blank" rel="noopener">Docs</a>
@@ -74,74 +65,15 @@
         </section>
         <section id="home" class="card hidden">
             <h2>Welcome to ABIET</h2>
-            <p>You are logged in. Configure your database connections and run SQL queries.</p>
-        </section>
-        <section id="connections" class="card hidden">
-            <h2>Database Connections</h2>
-            <div class="tabs">
-                <button class="tab-btn active" data-tab="local">Local</button>
-                <button class="tab-btn" data-tab="remote">Remote</button>
-            </div>
-            
-            <div id="local-tab" class="tab-content">
-                <h3>Local Database</h3>
-                <form id="localConnectionForm">
-                    <label for="localType">Database Type</label>
-                    <select id="localType" required>
-                        <option value="mssql">MSSQL</option>
-                        <option value="postgresql">PostgreSQL</option>
-                        <option value="oracle">Oracle</option>
-                    </select>
-                    <label for="localHost">Host</label>
-                    <input type="text" id="localHost" value="host.docker.internal" required />
-                    <label for="localPort">Port</label>
-                    <input type="number" id="localPort" value="1433" required />
-                    <label for="localDatabase">Database Name</label>
-                    <input type="text" id="localDatabase" required />
-                    <label for="localUsername">Username</label>
-                    <input type="text" id="localUsername" required />
-                    <label for="localPassword">Password</label>
-                    <input type="password" id="localPassword" required />
-                    <button type="submit">Save Connection</button>
-                    <button type="button" id="testLocalBtn">Test Connection</button>
-                </form>
-                <p id="localMsg"></p>
-            </div>
-            
-            <div id="remote-tab" class="tab-content hidden">
-                <h3>Remote Database</h3>
-                <form id="remoteConnectionForm">
-                    <label for="remoteType">Database Type</label>
-                    <select id="remoteType" required>
-                        <option value="mssql">MSSQL</option>
-                        <option value="postgresql">PostgreSQL</option>
-                        <option value="oracle">Oracle</option>
-                    </select>
-                    <label for="remoteHost">Host</label>
-                    <input type="text" id="remoteHost" required />
-                    <label for="remotePort">Port</label>
-                    <input type="number" id="remotePort" value="1433" required />
-                    <label for="remoteDatabase">Database Name</label>
-                    <input type="text" id="remoteDatabase" required />
-                    <label for="remoteUsername">Username</label>
-                    <input type="text" id="remoteUsername" required />
-                    <label for="remotePassword">Password</label>
-                    <input type="password" id="remotePassword" required />
-                    <button type="submit">Save Connection</button>
-                    <button type="button" id="testRemoteBtn">Test Connection</button>
-                </form>
-                <p id="remoteMsg"></p>
-            </div>
-            
-            <h3>Saved Connections</h3>
-            <ul id="savedConnections"></ul>
+            <p>You are logged in. Use the <strong>Query</strong> tab to run SQL against databases.</p>
         </section>
         <section id="query" class="card hidden">
             <h2>Database Query</h2>
             <form id="queryForm">
-                <label for="connectionSelect">Database Connection</label>
-                <select id="connectionSelect" required>
-                    <option value="">Select a connection...</option>
+                <label for="dbType">Database type</label>
+                <select id="dbType" required>
+                    <option value="mssql">MSSQL</option>
+                    <option value="oracle">Oracle</option>
                 </select>
                 <label for="naturalQuery">Natural Language Query</label>
                 <textarea id="naturalQuery" rows="3" placeholder="Show me all users from New York" required></textarea>

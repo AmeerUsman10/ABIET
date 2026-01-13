@@ -6,11 +6,10 @@ let token = localStorage.getItem('token');
 function showLoggedIn() {
     document.getElementById('login').classList.add('hidden');
     document.getElementById('home').classList.remove('hidden');
-    document.getElementById('connectionsLink').classList.remove('hidden');
     document.getElementById('queryLink').classList.remove('hidden');
     document.getElementById('learningLink').classList.remove('hidden');
     document.getElementById('logoutBtn').classList.remove('hidden');
-    loadSavedConnections();
+    loadHistory();
 }
 
 function showLoggedOut() {
@@ -100,154 +99,6 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
     showLoggedOut();
 });
 
-// Database connections management
-let savedConnections = JSON.parse(localStorage.getItem('dbConnections') || '[]');
-
-function saveConnection(type, connection) {
-    const id = Date.now().toString();
-    const conn = { id, type, ...connection };
-    savedConnections.push(conn);
-    localStorage.setItem('dbConnections', JSON.stringify(savedConnections));
-    loadSavedConnections();
-    return conn;
-}
-
-function deleteConnection(id) {
-    savedConnections = savedConnections.filter(conn => conn.id !== id);
-    localStorage.setItem('dbConnections', JSON.stringify(savedConnections));
-    loadSavedConnections();
-}
-
-function loadSavedConnections() {
-    const list = document.getElementById('savedConnections');
-    list.innerHTML = '';
-    
-    const select = document.getElementById('connectionSelect');
-    select.innerHTML = '<option value="">Select a connection...</option>';
-    
-    savedConnections.forEach(conn => {
-        const li = document.createElement('li');
-        li.innerHTML = `
-            <span>${conn.type.toUpperCase()} - ${conn.database} (${conn.host}:${conn.port})</span>
-            <button class="delete-btn" data-id="${conn.id}">Delete</button>
-        `;
-        list.appendChild(li);
-        
-        // Add to query dropdown
-        const option = document.createElement('option');
-        option.value = conn.id;
-        option.textContent = `${conn.type.toUpperCase()} - ${conn.database} (${conn.host}:${conn.port})`;
-        select.appendChild(option);
-    });
-    
-    // Add delete event listeners
-    document.querySelectorAll('.delete-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            deleteConnection(e.target.dataset.id);
-        });
-    });
-}
-
-async function testConnection(connection) {
-    try {
-        const response = await fetch(`${BACKEND_URL}/api/v1/db/test`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify(connection),
-        });
-        
-        if (response.ok) {
-            return { success: true, message: 'Connection successful!' };
-        } else {
-            const data = await response.json();
-            return { success: false, message: data.detail || 'Connection failed' };
-        }
-    } catch (error) {
-        return { success: false, message: 'Network error' };
-    }
-}
-
-// Tab switching for connections
-document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-        const tab = e.target.dataset.tab;
-        
-        // Update active tab button
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        e.target.classList.add('active');
-        
-        // Show selected tab content
-        document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
-        document.getElementById(`${tab}-tab`).classList.remove('hidden');
-    });
-});
-
-document.getElementById('localConnectionForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const connection = {
-        type: document.getElementById('localType').value,
-        host: document.getElementById('localHost').value,
-        port: parseInt(document.getElementById('localPort').value),
-        database: document.getElementById('localDatabase').value,
-        username: document.getElementById('localUsername').value,
-        password: document.getElementById('localPassword').value,
-    };
-    
-    saveConnection('local', connection);
-    document.getElementById('localMsg').textContent = 'Connection saved!';
-    e.target.reset();
-    document.getElementById('localHost').value = 'host.docker.internal';
-    document.getElementById('localPort').value = '1433';
-});
-
-document.getElementById('remoteConnectionForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const connection = {
-        type: document.getElementById('remoteType').value,
-        host: document.getElementById('remoteHost').value,
-        port: parseInt(document.getElementById('remotePort').value),
-        database: document.getElementById('remoteDatabase').value,
-        username: document.getElementById('remoteUsername').value,
-        password: document.getElementById('remotePassword').value,
-    };
-    
-    saveConnection('remote', connection);
-    document.getElementById('remoteMsg').textContent = 'Connection saved!';
-    e.target.reset();
-    document.getElementById('remotePort').value = '1433';
-});
-
-document.getElementById('testLocalBtn').addEventListener('click', async () => {
-    const connection = {
-        type: document.getElementById('localType').value,
-        host: document.getElementById('localHost').value,
-        port: parseInt(document.getElementById('localPort').value),
-        database: document.getElementById('localDatabase').value,
-        username: document.getElementById('localUsername').value,
-        password: document.getElementById('localPassword').value,
-    };
-    
-    const result = await testConnection(connection);
-    document.getElementById('localMsg').textContent = result.message;
-});
-
-document.getElementById('testRemoteBtn').addEventListener('click', async () => {
-    const connection = {
-        type: document.getElementById('remoteType').value,
-        host: document.getElementById('remoteHost').value,
-        port: parseInt(document.getElementById('remotePort').value),
-        database: document.getElementById('remoteDatabase').value,
-        username: document.getElementById('remoteUsername').value,
-        password: document.getElementById('remotePassword').value,
-    };
-    
-    const result = await testConnection(connection);
-    document.getElementById('remoteMsg').textContent = result.message;
-});
-
 // Navigation handling
 document.querySelectorAll('nav a').forEach(link => {
     link.addEventListener('click', (e) => {
@@ -287,48 +138,24 @@ document.getElementById('queryForm').addEventListener('submit', async (e) => {
         alert('Please log in first.');
         return;
     }
-    
-    const connectionId = document.getElementById('connectionSelect').value;
-    if (!connectionId) {
-        alert('Please select a database connection.');
-        return;
-    }
-    
-    const connection = savedConnections.find(conn => conn.id === connectionId);
-    if (!connection) {
-        alert('Selected connection not found.');
-        return;
-    }
-    
+    const dbType = document.getElementById('dbType').value;
     const query = document.getElementById('naturalQuery').value.trim();
     if (!query) {
         alert('Please enter a query.');
         return;
     }
-    
     document.getElementById('sqlBox').textContent = 'Processing...';
     document.getElementById('resultsTable').classList.add('hidden');
     document.getElementById('noResults').classList.add('hidden');
     document.getElementById('feedbackSection').classList.add('hidden');
-    
     try {
-        const response = await fetch(BACKEND_URL + '/api/v1/query/process', {
+        const response = await fetch(BACKEND_URL + '/api/v1/query/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ 
-                query,
-                connection: {
-                    type: connection.type,
-                    host: connection.host,
-                    port: connection.port,
-                    database: connection.database,
-                    username: connection.username,
-                    password: connection.password
-                }
-            })
+            body: JSON.stringify({ query })
         });
         const data = await response.json();
         if (response.ok) {
