@@ -65,7 +65,30 @@
         </section>
         <section id="home" class="card hidden">
             <h2>Welcome to ABIET</h2>
-            <p>You are logged in. Use the <strong>Query</strong> tab to run SQL against databases.</p>
+            <p>You are logged in. Configure your database connection below and run SQL queries.</p>
+            
+            <h3>Database Connection</h3>
+            <form id="dbConnectionForm">
+                <label for="dbType">Database Type</label>
+                <select id="dbType" required>
+                    <option value="mssql">MSSQL</option>
+                    <option value="postgresql">PostgreSQL</option>
+                    <option value="oracle">Oracle</option>
+                </select>
+                <label for="dbHost">Host</label>
+                <input type="text" id="dbHost" value="host.docker.internal" required />
+                <label for="dbPort">Port</label>
+                <input type="number" id="dbPort" value="1433" required />
+                <label for="dbName">Database Name</label>
+                <input type="text" id="dbName" required />
+                <label for="dbUsername">Username</label>
+                <input type="text" id="dbUsername" required />
+                <label for="dbPassword">Password</label>
+                <input type="password" id="dbPassword" required />
+                <button type="submit">Save Connection</button>
+                <button type="button" id="testConnectionBtn">Test Connection</button>
+            </form>
+            <p id="connectionMsg"></p>
         </section>
         <section id="query" class="card hidden">
             <h2>Database Query</h2>

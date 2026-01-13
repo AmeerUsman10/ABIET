@@ -26,6 +26,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // Check for existing token
     if (token) {
         showLoggedIn();
+        // Load saved connection
+        const savedConnection = localStorage.getItem('dbConnection');
+        if (savedConnection) {
+            const conn = JSON.parse(savedConnection);
+            document.getElementById('dbType').value = conn.db_type;
+            document.getElementById('dbHost').value = conn.host;
+            document.getElementById('dbPort').value = conn.port;
+            document.getElementById('dbName').value = conn.database;
+            document.getElementById('dbUsername').value = conn.username;
+            // Don't fill password for security
+        }
     } else {
         showLoggedOut();
     }
@@ -97,6 +108,97 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
     token = null;
     localStorage.removeItem('token');
     showLoggedOut();
+});
+
+// Database connection handling
+document.getElementById('dbConnectionForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!token) {
+        alert('Please log in first.');
+        return;
+    }
+    
+    const connectionData = {
+        db_type: document.getElementById('dbType').value,
+        host: document.getElementById('dbHost').value,
+        port: parseInt(document.getElementById('dbPort').value),
+        database: document.getElementById('dbName').value,
+        username: document.getElementById('dbUsername').value,
+        password: document.getElementById('dbPassword').value
+    };
+    
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/v1/db/connect`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(connectionData)
+        });
+        
+        const data = await response.json();
+        const msgElement = document.getElementById('connectionMsg');
+        
+        if (response.ok) {
+            msgElement.textContent = 'Connection saved successfully!';
+            msgElement.style.color = 'green';
+            // Store connection in localStorage for convenience
+            localStorage.setItem('dbConnection', JSON.stringify(connectionData));
+        } else {
+            msgElement.textContent = data.detail || 'Failed to save connection';
+            msgElement.style.color = 'red';
+        }
+    } catch (error) {
+        document.getElementById('connectionMsg').textContent = 'Network error. Please try again.';
+        document.getElementById('connectionMsg').style.color = 'red';
+        console.error('Connection save error:', error);
+    }
+});
+
+document.getElementById('testConnectionBtn').addEventListener('click', async () => {
+    if (!token) {
+        alert('Please log in first.');
+        return;
+    }
+    
+    const connectionData = {
+        db_type: document.getElementById('dbType').value,
+        host: document.getElementById('dbHost').value,
+        port: parseInt(document.getElementById('dbPort').value),
+        database: document.getElementById('dbName').value,
+        username: document.getElementById('dbUsername').value,
+        password: document.getElementById('dbPassword').value
+    };
+    
+    document.getElementById('connectionMsg').textContent = 'Testing connection...';
+    document.getElementById('connectionMsg').style.color = 'black';
+    
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/v1/db/test`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(connectionData)
+        });
+        
+        const data = await response.json();
+        const msgElement = document.getElementById('connectionMsg');
+        
+        if (response.ok) {
+            msgElement.textContent = 'Connection test successful!';
+            msgElement.style.color = 'green';
+        } else {
+            msgElement.textContent = `Connection test failed: ${data.detail || 'Unknown error'}`;
+            msgElement.style.color = 'red';
+        }
+    } catch (error) {
+        document.getElementById('connectionMsg').textContent = 'Network error. Please try again.';
+        document.getElementById('connectionMsg').style.color = 'red';
+        console.error('Connection test error:', error);
+    }
 });
 
 // Navigation handling
@@ -178,6 +280,16 @@ document.getElementById('queryForm').addEventListener('submit', async (e) => {
 });
 
 async function executeSQL(sql, dbType) {
+    // Get connection details from form
+    const connectionData = {
+        db_type: document.getElementById('dbType').value,
+        host: document.getElementById('dbHost').value,
+        port: parseInt(document.getElementById('dbPort').value),
+        database: document.getElementById('dbName').value,
+        username: document.getElementById('dbUsername').value,
+        password: document.getElementById('dbPassword').value
+    };
+    
     try {
         const response = await fetch(BACKEND_URL + '/api/v1/db/execute', {
             method: 'POST',
@@ -185,7 +297,11 @@ async function executeSQL(sql, dbType) {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ db_type: dbType, query: sql })
+            body: JSON.stringify({ 
+                db_type: dbType, 
+                query: sql,
+                connection: connectionData
+            })
         });
         const data = await response.json();
         if (response.ok) {
