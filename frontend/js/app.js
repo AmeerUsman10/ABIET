@@ -15,6 +15,12 @@ let currentNav = null;
 let main = null;
 let navLinks = {};
 let picker = null;
+let openMenu = null;
+
+// One listener for the whole app: close the account menu when clicking elsewhere.
+document.addEventListener("click", (e) => {
+  if (openMenu && !openMenu.contains(e.target)) openMenu.hidden = true;
+});
 
 const ROUTES = [
   { pattern: /^#\/ask$/, nav: "ask", view: (el) => renderAsk(el) },
@@ -88,7 +94,7 @@ function userMenu() {
     class: "btn ghost", type: "button", "aria-haspopup": "menu",
     onclick: (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; },
   }, h("span", { text: state.user.username }));
-  document.addEventListener("click", (e) => { if (!menu.contains(e.target)) menu.hidden = true; });
+  openMenu = menu;
   return h("div", { class: "user-menu" }, button, menu);
 }
 

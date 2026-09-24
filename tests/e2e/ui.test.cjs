@@ -135,6 +135,18 @@ const SHOTS = process.argv[3] || "";
       await page.waitForSelector(".topbar");
     });
 
+    await step("sign out and sign back in", async () => {
+      await page.setViewportSize({ width: 1360, height: 900 });
+      await page.click(".user-menu > button");
+      await page.click('.menu button:has-text("Sign out")');
+      await page.waitForSelector("input[name=username]");
+      await page.fill("input[name=username]", "e2e@example.com");
+      await page.fill("input[name=password]", "e2e-password-123");
+      await page.click("button[type=submit]");
+      await page.waitForSelector(".topbar");
+      await page.waitForSelector(".schema-table");
+    });
+
     await step("no browser errors", async () => {
       assert.deepEqual(problems, []);
     });

@@ -96,6 +96,7 @@ ABIET 0.1 database in place. A test fails whenever the models and the migrations
   the API. If `SECRET_KEY` is unset, a random key is generated once and stored in `DATA_DIR/.secret_key` (mode 600).
 - **SQLite sandbox:** SQLite connections are limited to files inside `DATA_DIR/databases`, so ABIET's own database
   or arbitrary server files cannot be registered as connections.
+- **Network reach:** ABIET connects to whatever host a user enters for a connection, from the server's network. In shared deployments, restrict the server's outbound access (firewall or network policy) to the database hosts users should reach.
 - **Web UI:** strict Content Security Policy (no inline scripts or styles), `X-Frame-Options: DENY`, and all dynamic
   text is inserted with `textContent`.
 - **AI usage:** per-user rate limit (`AI_RATE_LIMIT_PER_MINUTE`); query results are never sent to the AI provider,
