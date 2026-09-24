@@ -1,76 +1,85 @@
 """
-Learning System Routes
+Learning system: usage and accuracy insights, and the examples ABIET has learned.
 """
 
-import logging
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from typing import List, Dict, Any
-from ai.learning.learning_engine import LearningEngine
-from ai.feedback_processor import FeedbackProcessor
+from typing import Literal
 
-logger = logging.getLogger(__name__)
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import and_, or_, select
+from sqlalchemy.orm import Session
+
+from ai.feedback_processor import FeedbackProcessor
+from ai.llm import LLMClient, get_llm
+from backend.database import get_db
+from backend.deps import enforce_ai_rate_limit, get_current_user, get_owned_connection
+from backend.models import QueryRecord, User
+from backend.schemas import AIInsightsOut, InsightsOut, LearnedExample
+
 router = APIRouter()
 
-class FeedbackRequest(BaseModel):
-    interaction_index: int
-    feedback: str
 
-class FeedbackResponse(BaseModel):
-    status: str
-    message: str
+def _scope_user(scope: str, user: User) -> int | None:
+    if scope == "all":
+        if not user.is_admin:
+            raise HTTPException(status_code=403, detail="Only administrators can view instance-wide insights")
+        return None
+    return user.id
 
-class HistoryResponse(BaseModel):
-    status: str
-    history: List
 
-class AnalysisResponse(BaseModel):
-    status: str
-    analysis: Dict[str, Any]
-    suggestions: List[str]
+@router.get("/insights", response_model=InsightsOut)
+def insights(
+    scope: Literal["me", "all"] = "me",
+    days: int = Query(30, ge=1, le=365),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Accuracy, error and usage analysis with improvement suggestions."""
+    report = FeedbackProcessor(db).export_report(user_id=_scope_user(scope, user), days=days)
+    return InsightsOut(**report)
 
-learning_engine = LearningEngine()
-feedback_processor = FeedbackProcessor(learning_engine)
 
-@router.get("/")
-async def learning_root():
-    try:
-        logger.info("Learning root endpoint accessed")
-        return {"message": "Learning system endpoint - to be implemented"}
-    except Exception as e:
-        logger.error(f"Error in learning root: {str(e)}")
-        raise HTTPException(status_code=500, detail="An unexpected error occurred.")
+@router.post("/insights/ai", response_model=AIInsightsOut)
+def ai_insights(
+    scope: Literal["me", "all"] = "me",
+    days: int = Query(30, ge=1, le=365),
+    user: User = Depends(enforce_ai_rate_limit),
+    db: Session = Depends(get_db),
+    llm: LLMClient = Depends(get_llm),
+):
+    """Ask the language model to interpret the insights and recommend improvements."""
+    processor = FeedbackProcessor(db, llm)
+    analysis = processor.analyze_feedback_patterns(user_id=_scope_user(scope, user), days=days)
+    return AIInsightsOut(**processor.get_ai_insights(analysis))
 
-@router.post("/feedback", response_model=FeedbackResponse)
-async def submit_feedback(request: FeedbackRequest):
-    try:
-        logger.info(f"Submitting feedback for interaction {request.interaction_index}")
-        learning_engine.add_feedback_to_interaction(request.interaction_index, request.feedback)
-        logger.info("Feedback submitted successfully")
-        return FeedbackResponse(status="success", message="Feedback recorded")
-    except Exception as exc:
-        logger.error(f"Error submitting feedback: {str(exc)}")
-        raise HTTPException(status_code=500, detail="Failed to record feedback. Please try again.")
 
-@router.get("/history", response_model=HistoryResponse)
-async def get_history(limit: int = 10):
-    try:
-        logger.info(f"Fetching interaction history with limit {limit}")
-        interactions = learning_engine.get_interactions(limit)
-        logger.info("History fetched successfully")
-        return HistoryResponse(status="success", history=interactions)
-    except Exception as exc:
-        logger.error(f"Error fetching history: {str(exc)}")
-        raise HTTPException(status_code=500, detail="Failed to retrieve interaction history. Please try again.")
-
-@router.get("/analysis", response_model=AnalysisResponse)
-async def get_feedback_analysis():
-    try:
-        logger.info("Generating feedback analysis")
-        analysis = feedback_processor.analyze_feedback_patterns()
-        suggestions = feedback_processor.generate_improvement_suggestions(analysis)
-        logger.info("Analysis generated successfully")
-        return AnalysisResponse(status="success", analysis=analysis, suggestions=suggestions)
-    except Exception as exc:
-        logger.error(f"Error generating analysis: {str(exc)}")
-        raise HTTPException(status_code=500, detail="Failed to generate feedback analysis. Please try again.")
+@router.get("/examples", response_model=list[LearnedExample])
+def learned_examples(
+    connection_id: int,
+    limit: int = Query(50, ge=1, le=200),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Approved and corrected queries that are reused as examples for this connection."""
+    get_owned_connection(db, user, connection_id)
+    records = db.scalars(
+        select(QueryRecord)
+        .where(
+            QueryRecord.connection_id == connection_id,
+            QueryRecord.question.is_not(None),
+            or_(
+                QueryRecord.corrected_sql.is_not(None),
+                and_(QueryRecord.rating == 1, QueryRecord.status == "success"),
+            ),
+        )
+        .order_by(QueryRecord.feedback_at.desc(), QueryRecord.id.desc())
+        .limit(limit)
+    )
+    return [
+        LearnedExample(
+            query_id=r.id,
+            question=r.question,
+            sql=r.corrected_sql or r.executed_sql or "",
+            source="corrected" if r.corrected_sql else "approved",
+        )
+        for r in records
+    ]

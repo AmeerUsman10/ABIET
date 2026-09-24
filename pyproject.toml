@@ -1,0 +1,22 @@
+[project]
+name = "abiet"
+version = "1.0.0"
+description = "Artificial Business Intelligence Enabled Tool - ask your databases questions in plain English"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+extend-exclude = ["backend/migrations/script.py.mako"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "BLE"]
+ignore = ["B008"]  # FastAPI dependencies are declared as argument defaults
+
+[tool.ruff.lint.per-file-ignores]
+"tests/conftest.py" = ["E402"]

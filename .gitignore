@@ -2,13 +2,16 @@
 __pycache__/
 *.py[cod]
 *.class
+.pytest_cache/
+.ruff_cache/
 
 # Environment
 .env
 venv/
 .venv/
 
-# Database
+# Runtime data (internal database, secret key, demo database)
+data/
 *.db
 *.sqlite
 

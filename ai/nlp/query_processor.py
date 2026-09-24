@@ -1,136 +1,109 @@
 """ai.nlp.query_processor
-================================
-This module provides a lightweight NLP query processor for the ABIET project.
-It tokenizes queries and generates basic SQL for simple SELECT statements.
+========================
+Turns a natural-language question into SQL using a language model.
 
-For now, it supports patterns like:
-- "select all customers" -> "SELECT * FROM customers"
-- "show me users" -> "SELECT * FROM users"
-- "get customer names" -> "SELECT names FROM customers" (basic)
-
-Future versions will use advanced NLP models for complex queries.
+The processor is schema-aware (it sends the relevant tables and columns of the
+connected database), dialect-aware, learns from past approved/corrected
+queries (few-shot examples supplied by the learning engine), supports
+follow-up questions, and can repair a query using the database's error
+message.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Dict, Any
-import json
-import openai
-from backend.config.settings import settings
-from ai.learning.learning_engine import LearningEngine
+import re
+from dataclasses import dataclass, field
+from typing import Any
+
+from ai.llm import LLMClient
+from ai.nlp.prompts import Example, Turn, build_messages, build_repair_messages
+
+CHART_TYPES = {"bar", "line", "pie"}
+_SQL_FENCE = re.compile(r"^```(?:sql)?\s*|\s*```$", re.IGNORECASE)
 
 
 @dataclass
+class GenerationResult:
+    sql: str | None
+    explanation: str | None
+    clarification: str | None = None
+    chart: dict[str, Any] | None = None
+    raw: dict[str, Any] = field(default_factory=dict)
+
+
+def _clean_text(value: Any) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text or text.lower() in {"null", "none"}:
+        return None
+    return text
+
+
+def parse_generation(raw: dict[str, Any]) -> GenerationResult:
+    sql = _clean_text(raw.get("sql") or raw.get("query"))
+    if sql:
+        sql = _SQL_FENCE.sub("", sql).strip()
+        while sql.endswith(";"):
+            sql = sql[:-1].rstrip()
+        sql = sql or None
+    chart = raw.get("chart")
+    if isinstance(chart, dict) and chart.get("type") in CHART_TYPES:
+        y = chart.get("y")
+        if isinstance(y, str):
+            y = [y]
+        chart = {"type": chart["type"], "x": chart.get("x"), "y": [str(c) for c in (y or [])]}
+    else:
+        chart = None
+    clarification = _clean_text(raw.get("clarification"))
+    return GenerationResult(
+        sql=sql,
+        explanation=_clean_text(raw.get("explanation")),
+        clarification=clarification if not sql else None,
+        chart=chart,
+        raw=raw,
+    )
+
+
 class QueryProcessor:
-    """Simple query processor with basic SQL generation.
+    def __init__(self, llm: LLMClient, *, max_rows: int = 1000, schema_budget: int = 12000):
+        self.llm = llm
+        self.max_rows = max_rows
+        self.schema_budget = schema_budget
+        self.last_messages: list[dict[str, str]] = []
 
-    Attributes
-    ----------
-    language: str
-        Language of the incoming queries. Defaults to "en".
-    """
-
-    language: str = "en"
-
-    def __post_init__(self):
-        openai.api_key = settings.OPENAI_API_KEY
-        self.learning_engine = LearningEngine()
-
-    def _process_with_openai(self, query: str) -> Dict[str, Any]:
-        """Process the query using OpenAI API for intent detection and SQL generation."""
-        prompt = f"""
-Convert the following natural language query to SQL. Assume a database with tables like users, orders, products, etc. Detect the intent and generate appropriate SQL.
-
-Query: {query}
-
-Return a JSON object with the following keys:
-- "intent": a brief description of the intent (e.g., "retrieve user information")
-- "sql": the generated SQL query
-- "entities": any extracted entities (e.g., names, dates) as a list or dict
-
-If unable to generate SQL, set "sql" to null and provide a reason in "error".
-"""
-        try:
-            client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
-            response = client.chat.completions.create(
-                model=settings.AI_MODEL,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=settings.AI_TEMPERATURE,
-                max_tokens=settings.AI_MAX_TOKENS,
-            )
-            content = response.choices[0].message.content.strip()
-            parsed = json.loads(content)
-            return parsed
-        except openai.OpenAIError as e:
-            return {"intent": "error", "sql": None, "entities": {}, "error": str(e)}
-        except json.JSONDecodeError as e:
-            return {"intent": "error", "sql": None, "entities": {}, "error": f"Invalid JSON response: {str(e)}"}
-        except Exception as e:
-            return {"intent": "error", "sql": None, "entities": {}, "error": str(e)}
-
-    def _generate_sql(self, parsed: Dict[str, Any]) -> str:
-        """Generate basic SQL from parsed tokens.
-
-        Supports simple patterns:
-        - select [all|*] [table]
-        - show [me] [table]
-        - get [column] from [table]
-        """
-        tokens = parsed["tokens"]
-        if not tokens:
-            return "-- Unable to parse query"
-
-        # Pattern 1: select all [table]
-        if tokens[0] == "select" and "all" in tokens:
-            table_idx = tokens.index("all") + 1
-            if table_idx < len(tokens):
-                table = tokens[table_idx]
-                return f"SELECT * FROM {table};"
-
-        # Pattern 2: show [me] [table]
-        if tokens[0] == "show":
-            table = tokens[-1] if len(tokens) > 1 else "unknown"
-            return f"SELECT * FROM {table};"
-
-        # Pattern 3: get [column] from [table]
-        if tokens[0] == "get" and "from" in tokens:
-            from_idx = tokens.index("from")
-            column = " ".join(tokens[1:from_idx])
-            table = tokens[from_idx + 1] if from_idx + 1 < len(tokens) else "unknown"
-            return f"SELECT {column} FROM {table};"
-
-        # Fallback
-        return "-- Query not recognized. Supported: 'select all customers', 'show users', 'get names from customers'"
-
-    def process(self, query: str) -> Dict[str, Any]:
-        """Process a raw query string.
-
-        Returns
-        -------
-        dict
-            A dictionary containing the original query and a ``parsed`` field
-            with the result of the OpenAI processing.
-        """
-        if not isinstance(query, str):
-            raise TypeError("query must be a string")
-        parsed = self._process_with_openai(query)
-        
-        # Record the interaction
-        success = parsed.get("sql") is not None
-        error = parsed.get("error") if not success else None
-        self.learning_engine.record_interaction(
-            natural_query=query,
-            generated_sql=parsed.get("sql"),
-            success=success,
-            error=error
+    def _messages(
+        self,
+        question: str,
+        *,
+        db_type: str,
+        schema: dict[str, Any],
+        examples: list[Example] | None = None,
+        history: list[Turn] | None = None,
+        allow_writes: bool = False,
+    ) -> list[dict[str, str]]:
+        return build_messages(
+            question=question,
+            db_type=db_type,
+            schema=schema,
+            examples=examples or [],
+            history=history or [],
+            max_rows=self.max_rows,
+            schema_budget=self.schema_budget,
+            allow_writes=allow_writes,
         )
-        
-        return {
-            "original": query,
-            "parsed": parsed,
-            "generated_sql": parsed.get("sql"),
-        }
 
-# Singleton processor
-processor = QueryProcessor()
+    def generate(self, question: str, **context: Any) -> GenerationResult:
+        if not isinstance(question, str) or not question.strip():
+            raise ValueError("question must be a non-empty string")
+        messages = self._messages(question.strip(), **context)
+        self.last_messages = messages
+        result = parse_generation(self.llm.complete_json(messages))
+        if not result.sql and not result.clarification:
+            result.clarification = "I couldn't turn that into a query. Could you rephrase or add more detail?"
+        return result
+
+    def repair(self, question: str, failed_sql: str, error: str, **context: Any) -> GenerationResult:
+        messages = build_repair_messages(self._messages(question.strip(), **context), failed_sql, error)
+        self.last_messages = messages
+        return parse_generation(self.llm.complete_json(messages))
