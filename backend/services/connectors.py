@@ -244,7 +244,8 @@ def _connect_args(spec: ConnectionSpec) -> dict[str, Any]:
             "options": f"-c statement_timeout={query_timeout * 1000}",
         }
     if spec.db_type == "mysql":
-        return {"connect_timeout": connect_timeout, "read_timeout": query_timeout}
+        # read_timeout is only a backstop; the server-side limit is set in _install_timeouts.
+        return {"connect_timeout": connect_timeout, "read_timeout": query_timeout + 15}
     if spec.db_type == "mssql":
         return {"timeout": connect_timeout}
     if spec.db_type == "oracle":
@@ -269,6 +270,26 @@ def _install_timeouts(engine: Engine, db_type: str) -> None:
         @event.listens_for(engine, "connect")
         def _oracle_timeout(dbapi_conn, _record):  # pragma: no cover - needs Oracle
             dbapi_conn.call_timeout = query_timeout * 1000
+
+    elif db_type == "mysql":
+
+        @event.listens_for(engine, "connect")
+        def _mysql_timeout(dbapi_conn, _record):
+            # Server-side limit so the server stops the statement (the socket read timeout only
+            # drops the client). MySQL and MariaDB name the variable differently.
+            cursor = dbapi_conn.cursor()
+            try:
+                for statement in (
+                    f"SET SESSION max_execution_time = {query_timeout * 1000}",
+                    f"SET SESSION max_statement_time = {query_timeout}",
+                ):
+                    try:
+                        cursor.execute(statement)
+                        break
+                    except Exception:  # noqa: BLE001 - unknown variable on this server flavour
+                        continue
+            finally:
+                cursor.close()
 
     elif db_type == "sqlite":
 
@@ -353,7 +374,13 @@ def describe_error(exc: BaseException) -> str:
     else:
         message = str(exc)
     message = message.split("\n(Background on this error")[0].strip()
-    if message == "interrupted":  # SQLite progress-handler timeout
+    lowered = message.lower()
+    if (
+        message == "interrupted"
+        or "max_statement_time exceeded" in lowered
+        or ("maximum statement execution time exceeded" in lowered)
+        or ("lost connection" in lowered and "timed out" in lowered)
+    ):
         message = f"The query was stopped because it ran longer than {settings.QUERY_TIMEOUT_SECONDS} seconds"
     elif "IM002" in message or "Can't open lib" in message:
         message = (

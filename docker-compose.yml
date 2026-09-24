@@ -1,71 +1,49 @@
-version: '3.8'
+# ABIET with PostgreSQL as its internal store.
+#
+#   cp .env.example .env      # add OPENAI_API_KEY (and ideally SECRET_KEY)
+#   docker compose up -d --build
+#   open http://localhost:8000
+#
+# Databases on your own machine (e.g. SQL Server Express) are reachable from the
+# container as host.docker.internal.
 
 services:
-  backend:
-    build:
-      context: .
-      dockerfile: Dockerfile.backend
+  abiet:
+    build: .
+    image: abiet:latest
     ports:
-      - "8000:8000"
+      - "${ABIET_PORT:-8000}:8000"
     environment:
-      - DATABASE_URL=postgresql://user:password@db:5432/abiet
-      - REDIS_URL=redis://redis:6379/0
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - MSSQL_DATABASE_URL=mssql+pyodbc://sa:YourStrong!Passw0rd@mssql/master?driver=ODBC+Driver+17+for+SQL+Server
-    depends_on:
-      - db
-      - redis
+      DATABASE_URL: postgresql+psycopg2://abiet:${ABIET_DB_PASSWORD:-abiet}@db:5432/abiet
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
+      AI_MODEL: ${AI_MODEL:-gpt-4o-mini}
+      SECRET_KEY: ${SECRET_KEY:-}
+      ALLOW_REGISTRATION: ${ALLOW_REGISTRATION:-true}
     volumes:
-      - ./backend:/app/backend
-    networks:
-      - abiet-network
-
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
-    ports:
-      - "8080:8080"
-    networks:
-      - abiet-network
+      - abiet-data:/app/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
 
   db:
-    image: postgres:15
+    image: postgres:16-alpine
     environment:
       POSTGRES_DB: abiet
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: abiet
+      POSTGRES_PASSWORD: ${ABIET_DB_PASSWORD:-abiet}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - abiet-network
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    networks:
-      - abiet-network
-
-  mssql:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    environment:
-      ACCEPT_EULA: Y
-      SA_PASSWORD: YourStrong!Passw0rd
-      MSSQL_PID: Express
-    ports:
-      - "1433:1433"
-    volumes:
-      - mssql_data:/var/opt/mssql
-    networks:
-      - abiet-network
+      - abiet-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U abiet -d abiet"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
 
 volumes:
-  postgres_data:
-  mssql_data:
-
-networks:
-  abiet-network:
-    driver: bridge
+  abiet-data:
+  abiet-db:

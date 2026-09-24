@@ -99,6 +99,23 @@ def _begin_read_only(conn: Connection, db_type: str) -> None:
         conn.rollback()
 
 
+def _close_result(conn: Connection, result: Any, db_type: str, rows_remaining: bool) -> None:
+    """
+    Close a result. A partially read MySQL streaming result would otherwise read every
+    remaining row from the server on close, so that connection is discarded instead.
+    """
+    if not (rows_remaining and db_type == "mysql"):
+        result.close()
+        return
+    cursor = getattr(result, "cursor", None)
+    pending = getattr(cursor, "_result", None)
+    if pending is not None and hasattr(pending, "unbuffered_active"):
+        pending.unbuffered_active = False  # PyMySQL: skip draining when the result is collected
+    if cursor is not None and hasattr(cursor, "connection"):
+        cursor.connection = None  # PyMySQL: make cursor.close() a no-op
+    conn.invalidate()
+
+
 def _connect(engine: Engine) -> Connection:
     try:
         return engine.connect()
@@ -130,7 +147,7 @@ def execute_sql(engine: Engine, db_type: str, sql: str, *, max_rows: int, read_o
                 fetched = result.fetchmany(max_rows + 1)
                 truncated = len(fetched) > max_rows
                 rows = [[to_json_value(v) for v in row] for row in fetched[:max_rows]]
-                result.close()
+                _close_result(conn, result, db_type, rows_remaining=truncated)
             else:
                 affected = result.rowcount if result.rowcount is not None and result.rowcount >= 0 else None
             if read_only:
@@ -176,7 +193,7 @@ def stream_csv(engine: Engine, db_type: str, sql: str, *, max_rows: int) -> Iter
             yield buffer.getvalue()
             buffer.seek(0)
             buffer.truncate()
-        result.close()
+        _close_result(conn, result, db_type, rows_remaining=sent >= max_rows)
         if buffer.getvalue():
             yield buffer.getvalue()
     finally:

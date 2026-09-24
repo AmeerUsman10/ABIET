@@ -54,6 +54,12 @@ def get_owned_connection(db: Session, user: User, connection_id: int) -> Databas
     return conn
 
 
+def query_connection(record: QueryRecord) -> DatabaseConnection | None:
+    """The connection a history record ran on, only if it still belongs to the record's owner."""
+    conn = record.connection
+    return conn if conn is not None and conn.owner_id == record.user_id else None
+
+
 def get_owned_query(db: Session, user: User, query_id: int) -> QueryRecord:
     record = db.get(QueryRecord, query_id)
     if record is None or record.user_id != user.id:

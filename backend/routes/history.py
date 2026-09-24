@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from ai.learning.learning_engine import LearningEngine
 from backend.config import settings
 from backend.database import get_db
-from backend.deps import get_current_user, get_owned_query
+from backend.deps import get_current_user, get_owned_query, query_connection
 from backend.models import DatabaseConnection, QueryRecord, User
 from backend.schemas import FeedbackRequest, QueryList, QueryOut, QueryUpdate
 from backend.services.assistant import sqlglot_dialect
@@ -28,7 +28,10 @@ STATUSES = {"success", "error", "blocked", "clarification", "needs_confirmation"
 
 def to_query_out(record: QueryRecord) -> QueryOut:
     out = QueryOut.model_validate(record)
-    out.connection_name = record.connection.name if record.connection else None
+    conn = query_connection(record)
+    out.connection_name = conn.name if conn else None
+    if conn is None:
+        out.connection_id = None
     return out
 
 
@@ -112,7 +115,8 @@ def submit_feedback(
     record = get_owned_query(db, user, query_id)
     corrected = payload.corrected_sql
     if corrected is not None and corrected.strip():
-        dialect = sqlglot_dialect(record.connection) if record.connection else "sqlite"
+        conn = query_connection(record)
+        dialect = sqlglot_dialect(conn) if conn else "sqlite"
         try:
             corrected = analyze_sql(corrected, dialect).sql
         except SqlRejected as exc:
@@ -125,7 +129,7 @@ def submit_feedback(
 def export_csv(query_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Re-run a query's SQL and download the full result (up to EXPORT_MAX_ROWS rows) as CSV."""
     record = get_owned_query(db, user, query_id)
-    conn: DatabaseConnection | None = record.connection
+    conn: DatabaseConnection | None = query_connection(record)
     sql = record.executed_sql or record.generated_sql
     if conn is None or not sql:
         raise HTTPException(status_code=400, detail="This query has no SQL or its connection was deleted")

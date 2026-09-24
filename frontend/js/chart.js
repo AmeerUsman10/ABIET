@@ -330,7 +330,8 @@ function drawLines(model, width) {
   const single = model.series.length === 1;
   const lastValue = (series) => [...series.values].reverse().find((v) => typeof v === "number");
   const endW = single ? textWidth(formatCompact(lastValue(model.series[0]) ?? 0), 12) + 14 : 10;
-  const left = Math.max(...scale.ticks.map((t) => textWidth(formatCompact(t), 11))) + 10;
+  const tickW = Math.max(...scale.ticks.map((t) => textWidth(formatCompact(t), 11))) + 10;
+  const left = Math.max(tickW, textWidth(model.labels[0] || "", 11) / 2 + 2); // room to centre the first x label
   const right = width - endW;
   const top = 10;
   const bottom = height - 24;
@@ -348,8 +349,7 @@ function drawLines(model, width) {
   }
   model.labels.forEach((label, i) => {
     if (i % every === 0) {
-      const anchor = i === 0 ? "start" : "middle";
-      svg.append(s("text", { class: "tick", x: xs(i), y: height - 6, "text-anchor": anchor }, fitText(label, step * every - 6 || 80, 11)));
+      svg.append(s("text", { class: "tick", x: xs(i), y: height - 6, "text-anchor": "middle" }, fitText(label, step * every - 6 || 80, 11)));
     }
   });
   for (const series of model.series) {

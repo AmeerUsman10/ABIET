@@ -16,7 +16,8 @@ os.environ["DATA_DIR"] = _DATA_DIR
 os.environ["SECRET_KEY"] = "test-secret-key-for-abiet-tests-only"
 os.environ["OPENAI_API_KEY"] = ""
 os.environ["OPENAI_BASE_URL"] = ""
-os.environ.pop("DATABASE_URL", None)
+# Set ABIET_TEST_DATABASE_URL to run the suite with the internal store on another database (e.g. PostgreSQL).
+os.environ["DATABASE_URL"] = os.environ.get("ABIET_TEST_DATABASE_URL", "")
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

@@ -14,7 +14,7 @@ from pathlib import Path
 
 from alembic import command
 from alembic.config import Config
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, event, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from backend.config import settings
@@ -32,6 +32,17 @@ engine = create_engine(
     pool_pre_ping=True,
     connect_args={"check_same_thread": False} if _is_sqlite else {},
 )
+
+if _is_sqlite:
+
+    @event.listens_for(engine, "connect")
+    def _enable_foreign_keys(dbapi_conn, _record):
+        # SQLite ignores ON DELETE CASCADE / SET NULL unless this is enabled per connection.
+        cursor = dbapi_conn.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+
+
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
 MIGRATIONS_DIR = Path(__file__).parent / "migrations"

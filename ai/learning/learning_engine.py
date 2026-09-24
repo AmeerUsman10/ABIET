@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session
 
 from ai.learning.similarity import normalize_question, similarity, tokenize
 from ai.nlp.prompts import Example
-from backend.models import QueryRecord, utcnow
+from backend.models import DatabaseConnection, QueryRecord, utcnow
 
 CANDIDATE_POOL = 500
 MIN_SIMILARITY = 0.2
@@ -44,7 +44,13 @@ class LearningEngine:
             return []
         stmt = (
             select(QueryRecord)
-            .where(QueryRecord.connection_id == connection_id, QueryRecord.question.is_not(None), self._trusted())
+            .join(DatabaseConnection, DatabaseConnection.id == QueryRecord.connection_id)
+            .where(
+                QueryRecord.connection_id == connection_id,
+                DatabaseConnection.owner_id == QueryRecord.user_id,
+                QueryRecord.question.is_not(None),
+                self._trusted(),
+            )
             .order_by(QueryRecord.created_at.desc())
             .limit(CANDIDATE_POOL)
         )

@@ -65,6 +65,7 @@ def learned_examples(
         select(QueryRecord)
         .where(
             QueryRecord.connection_id == connection_id,
+            QueryRecord.user_id == user.id,
             QueryRecord.question.is_not(None),
             or_(
                 QueryRecord.corrected_sql.is_not(None),

@@ -52,7 +52,7 @@ def upgrade() -> None:
         sa.Column("database", sa.String(500), nullable=True),
         sa.Column("username", sa.String(255), nullable=True),
         sa.Column("password_encrypted", sa.Text(), nullable=True),
-        sa.Column("options", sa.JSON(), nullable=True),
+        sa.Column("options", sa.JSON(), nullable=False),
         sa.Column("read_only", sa.Boolean(), nullable=False, server_default=sa.true()),
         sa.Column("is_demo", sa.Boolean(), nullable=False, server_default=sa.false()),
         sa.Column("schema_cache", sa.JSON(), nullable=True),
